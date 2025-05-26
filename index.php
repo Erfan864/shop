@@ -7,39 +7,25 @@
 </head>
 
 <body>
-    <?php require('./partial/switch_mode.php'); ?>
-    <?php
-    $host = "localhost";
-    $dbname = "shop";
-    $dbUsername = "root";
-    $dbPassword = "";
-    try {
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $dbUsername, $dbPassword);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        if (isset($_COOKIE['register_date']) && (time() - $_COOKIE['register_date']) < 86400 * 30) {
-            $dbUpdate = $pdo->prepare("UPDATE `users` SET `register_date` = :register_date WHERE username = :username ");
-            $dbUpdate->execute([
-                ':username' => $_COOKIE['username'],
-                ':register_date' => time(),
-            ]);
+    <?php 
+    require('./partial/switch_mode.php');
+    require_once('./partial/main.php');
+    
+    $pdo = dbStart();
+    if (!$pdo) {
+        header('Location: err.php');
+        exit;
+    }
+
+    if (isset($_COOKIE['username'])) {
+        if (checkSessionValidity($_COOKIE['username'], $pdo)) {
             header('Location: login.php');
             exit;
-        } elseif (isset($_COOKIE['register_date']) && (time() - $_COOKIE['register_date']) > 86400 * 30) {
-            setcookie("username", "", time() - 3600, "/");
-            setcookie("isLogin", "", time() - 3600, "/");
-            setcookie("register_date", "", time() - 3600, "/");
-            setcookie("remember_me", "", time() + (86400 * 1), "/");
-            header("Location: login.php");
-            exit();
-        } else {
-            setcookie("username", "", time() - 3600, "/");
-            setcookie("isLogin", "", time() - 3600, "/");
-            setcookie("register_date", "", time() - 3600, "/");
-            setcookie("remember_me", "", time() + (86400 * 1), "/");
         }
-    } catch (PDOException $e) {
-        // echo "Error" . $e->getMessage();
-    } ?>
+    } else {
+        deleteCookies();
+    }
+    ?>
     <div class="wrapper">
         <h1>Signup</h1>
         <p id="error-message"></p>

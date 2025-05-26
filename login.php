@@ -1,36 +1,22 @@
 <?php
-$host = "localhost";
-$dbname = "shop";
-$dbUsername = "root";
-$dbPassword = "";
-//ANCHOR
+require_once('./partial/main.php');
 
-try {
-  $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $dbUsername, $dbPassword);
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-  // echo "success <br/>";
-
-  if (isset($_COOKIE['username'])) {
-    $dbCheck = $pdo->prepare("SELECT * FROM users WHERE username = :username ");
-    $dbCheck->execute([':username' => $_COOKIE['username']]);
-    $dbCheckRes = $dbCheck->fetch(PDO::FETCH_ASSOC);
-    if ($dbCheckRes != FALSE && isset($_COOKIE['username']) && $dbCheckRes['remember_me']) {
-      $dbUpdate = $pdo->prepare("UPDATE `users` SET `register_date` = :register_date WHERE username = :username ");
-      $dbUpdate->execute([
-        ':username' => $_COOKIE['username'],
-        ':register_date' => time(),
-      ]);
-      setcookie("isLogin", true, time() + (86400 * 1), "/");
-      header('Location: dashboard.php');
-      exit;
-    }
-    # code...
-  }
-} catch (PDOException $e) {
-  // echo "Error" . $e->getMessage();
+$pdo = dbStart();
+if (!$pdo) {
+    header('Location: err.php');
+    exit;
 }
 
-?>
+if (isset($_COOKIE['username'])) {
+    $dbCheckRes = dbCheck($_COOKIE['username'], $pdo);
+    if ($dbCheckRes && isset($_COOKIE['username']) && $dbCheckRes['remember_me']) {
+        updateUserLoginTime($_COOKIE['username'], $pdo);
+        setcookie("isLogin", true, time() + (86400 * 1), "/");
+        header('Location: dashboard.php');
+        exit;
+    }
+}
+?> 
 <!DOCTYPE html>
 <html lang="en">
 
